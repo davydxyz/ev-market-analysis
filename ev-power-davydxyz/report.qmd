@@ -1,0 +1,218 @@
+---
+title: "EV Power - Lab 4 Project Report"
+format: typst
+---
+
+# Example Solution 1
+
+## **Part 0: libraries**
+
+```{r}
+library(tidyverse)
+library(stringr)
+```
+
+## **Part 1:** **Defining Research Question**
+
+Chosen Question:
+Percentage of renewable energy out of total energy
+
+
+## **Part 2: Data Preparation and Cleaning**
+
+```{r}
+renew_use_2021 <- read_csv("data/renew-use-2021.csv")
+renew_use_2022 <- read_csv("data/renew-use-2022.csv")
+renew_use_2023 <- read_csv("data/renew-use-2023.csv")
+total_use_2021 <- read_csv("data/total-use-2021.csv")
+total_use_2022 <- read_csv("data/total-use-2022.csv")
+total_use_2023 <- read_csv("data/total-use-2023.csv")
+av_energy_price_2021_to_2023 <- read_csv("data/av-energy-price-2021-2023.csv")
+ev_registrations_by_state_2023 <- read_csv("data/ev-registrations-by-state-2023.csv")
+
+# --- 1. Combine Yearly Data ---
+
+# Combine all renewable use files
+all_renewable_use <- bind_rows(
+  renew_use_2021, 
+  renew_use_2022, 
+  renew_use_2023
+)
+
+# Combine all total energy use files
+all_total_use <- bind_rows(
+  total_use_2021, 
+  total_use_2022, 
+  total_use_2023
+)
+
+
+# av_energy_price and ev_registrations are already single files
+
+# --- Part 2: Data Preparation & Cleaning ---
+
+all_renewable_use_clean <- all_renewable_use |>
+  rename_with(~ .x |>
+    tolower() |>               # Make all names lowercase
+    str_replace_all(" ", "_")   # Replace spaces with underscores
+  )
+
+all_total_use_clean <- all_total_use %>%
+  rename_with(~ .x |>
+    tolower() |>             
+    str_replace_all(" ", "_")   
+  )
+
+av_energy_price_clean <- av_energy_price_2021_to_2023 %>%
+  rename_with(~ .x |>
+    tolower() |>             
+    str_replace_all(" ", "_")   
+  )
+
+ev_registrations_clean <- ev_registrations_by_state_2023 %>%
+  rename_with(~ .x |>
+    tolower() |>            
+    str_replace_all(" ", "_")   
+  )
+
+
+# Clean Messy Numeric Values 
+
+all_renewable_use_clean <- all_renewable_use_clean |>
+  mutate(
+    across(
+      # Use the new, clean column names
+      .cols = c(renewable_use_2021, renewable_use_2022, renewable_use_2023), 
+      
+      # This function extracts the digits ("\\d+") and converts to a number
+      .fns = ~ as.numeric(str_extract(.x, "\\d+")),
+      
+      # This creates new columns named "renewable_use_2021_numeric", etc.
+      .names = "{.col}_numeric" 
+    ) 
+  )|>
+    select(-renewable_use_2021, -renewable_use_2022, -renewable_use_2023)
+
+view(all_renewable_use_clean)
+
+# Clean total_use
+
+# First, clean the column names for the total data
+all_total_use_clean <- all_total_use |>
+  rename_with(~ .x |> tolower() |> str_replace_all(" ", "_"))
+
+# Now, pivot it from wide to long
+total_use_long <- all_total_use_clean |>
+  pivot_longer(
+    cols = -c(energy_source), 
+    names_to = "state",             # The new column for "ak", "al", etc.
+    values_to = "total_use"         # The new column for the numbers
+  ) |>
+  mutate(
+    # Clean the numeric values (extract digits and decimals)
+    total_use = as.numeric(str_extract(total_use, "[\\d\\.]+")),
+    # Standardize state abbreviations to uppercase to match other data
+    state = toupper(state)
+  ) |>
+  # Keep only the columns we need
+  select(state, energy_source, total_use)
+
+view(total_use_long)
+
+state_key <- data.frame(
+  state_name = c(state.name, "District of Columbia"), 
+  state_abb = c(state.abb, "DC")
+)
+
+```
+
+## **Part 3: Joining / Pivoting Datasets for Analysis**
+
+```{r}
+
+# For Question One: percentage of renewable energy out of total energy
+renewable_long <- all_renewable_use_clean %>%
+  pivot_longer(
+    cols = ends_with("_numeric"), # Selects all our new numeric columns
+    names_to = "year_source_col",
+    values_to = "renewable_use"
+  ) |>
+  # Get rid of all the NA rows
+  filter(!is.na(renewable_use)) |>
+  # Clean up the year
+  mutate(year = str_extract(year_source_col, "\\d{4}")) |>
+  select(state, energy_source, year, renewable_use) |>
+  arrange(desc(renewable_use))
+
+view(renewable_long)
+
+#total_use is already pitovted.
+
+renewable_by_state <- renewable_long |>
+  group_by(state, year) |>
+  summarize(total_renewable_use = sum(renewable_use, na.rm = TRUE), .groups = "drop")
+
+total_use_by_state <- total_use_long |>
+  filter(str_starts(energy_source, "total")) |>
+  group_by(state) |>
+  summarize(total_state_use = sum(total_use, na.rm = TRUE), .groups = "drop")
+
+result <- full_join(renewable_by_state, total_use_by_state) |>
+    mutate(renew_energy_rate = total_renewable_use/total_state_use) |>
+  filter(!is.na(renew_energy_rate))
+
+view(result)
+
+
+```
+
+## **Part 4: Mapping Visualization**
+
+```{r}
+top_10_states_2023 <- result |>
+  filter(year == "2023") |>
+  arrange(desc(renew_energy_rate)) |>
+  # Get the top 10 states
+  slice_head(n = 10) |>
+  # Get just the list of state names
+  pull(state)
+
+# Filter the main 'result' data for ONLY those top 10 states
+plot_data <- result |>
+  filter(state %in% top_10_states_2023) |>
+  # Make sure we don't plot any bad data (like division by zero)
+  filter(!is.infinite(renew_energy_rate), !is.na(renew_energy_rate))
+
+# Create the grouped bar chart
+ggplot(plot_data, aes(x = state, y = renew_energy_rate, fill = year)) +
+  # "position = 'dodge'" places the bars side-by-side
+  geom_bar(stat = "identity", position = "dodge") +
+  
+  labs(
+    title = "Renewable Energy Rate (2021-2023) for Top 10 States",
+    subtitle = "Showing the trend for the states with the highest rate in 2023",
+    x = "State",
+    y = "Renewable Energy Rate (%)",
+    fill = "Year"
+  ) +
+  
+  # Format the y-axis to show percentages
+  # You may need to install this package: install.packages("scales")
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal()
+```
+
+
+Part 5: Analysis & Conclusion
+The visualization in Part 4 provides a clear answer of "Percentage of renewable energy out of total energy" by showing the trend for the 10 states with the highest renewable energy rates in 2023.
+
+Based on the graph, we can draw two main conclusions:
+
+1. Renewable Energy Rates are Growing Consistently: The most significant finding is the clear, upward trend in renewable energy rates from 2021 to 2023 across all top-performing states. For nearly every state shown, the 2023 bar (blue) is the highest, and the 2022 bar (green) is higher than the 2021 bar (red).
+
+2. Growth is Not Uniform: While all top states show growth, their trajectories differ.
+- Rapid Growth: California (CA) shows the most dramatic trend, growing from one of the lower rates in this group in 2021 (around 0.29%) to the single highest rate in 2023 (approaching 0.4%). New Mexico (NM) also shows a strong, steep increase.
+- High & Stable: Other states, like Indiana (IN) and Utah (UT), appear to have started with a high renewable rate and maintained that high level, showing less dramatic growth but consistent high performance.
+
+Total Growth: 
+The "US" bar, which likely represents the national average, mirrors this same steady growth, suggesting this is a widespread pattern. In the context of the main project question about EV power, this is a very positive finding. It indicates that the U.S. energy grid is becoming demonstrably cleaner each year. This, in turn, means that the electricity used to charge electric vehicles is increasingly coming from renewable sources.

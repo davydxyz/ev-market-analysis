@@ -1,0 +1,210 @@
+---
+format: typst
+---
+
+# Lab 4 Worksheet - Practice
+
+* add something about loading a csv and having to use
+# Split the one column into four
+energy_raw <- separate(
+  energy_raw,
+  col = 1,
+  into = c("State", "2021", "2022", "2023"),
+  sep = ","
+)
+* make sure str extract is clear str_extract(.x, "\\d+\\.?\\d*")
+
+#### Q1. Extract and clean text patterns from strings using regular expressions.
+
+You are given a messy dataset of energy sources with inconsistent units and spacing.
+
+```{r}
+energy_sources <- c("Solar (MWh)", "Wind (GWh)", "Coal (MWh)", "Hydro (kWh)")
+```
+
+a.  Use str_detect() to identify all energy sources that contain the substring "Wind" or "Hydro" (hint: use the \| operator in regex).
+
+```{r}
+
+```
+
+b.  Extract the unit type (e.g., MWh, GWh, kWh) using str_extract(). Make sure your pattern handles extra spaces or hyphens.
+
+```{r}
+
+```
+
+c.  Clean the names to keep only the energy source name, trimming whitespace and removing parentheses.
+
+```{r}
+
+```
+
+d.  Create a clean tibble called energy_clean with two columns: source and unit.
+
+```{r}
+
+```
+
+e.  Discussion: Why might regex cleaning be important before performing joins or aggregations?\
+    \
+
+#### Q2. State Datasets: Joins and Pivots
+
+We’ll use built-in datasets to explore US state-level data. state.x77 contains metrics such as population, income, and life expectancy. state.region classifies each state into one of four regions: Northeast, South, North Central, West.
+
+```{r}
+# Load datasets
+library(dplyr)
+
+# Convert matrix to data frame
+states <- data.frame(state.x77)
+
+# Add state names as a new column
+states$state <- rownames(states)
+
+# select and reorder columns
+states <- states |>
+  select(state, Income, Population, Illiteracy)
+# table for regions
+regions <- data.frame(state = state.name, region = state.region)
+
+states
+
+```
+
+a.  Perform a left join to combine socioeconomic and regional data.
+
+```{r}
+
+```
+
+b.  Perform an inner join. How many rows remain, and why is it the same or different?
+
+```{r}
+
+```
+
+
+c.  Perform an anti join to check if any state names don’t match between datasets. What might cause mismatches like this in real projects?
+
+```{r}
+
+```
+
+d.  Discussion: Why would you prefer a left join over an inner join when merging state-level datasets?\
+    \
+e. Use pivot_longer() to make the socioeconomic data longer.\
+
+```{r}
+
+```
+
+#### Q2.5.
+
+Load this data:
+
+```{r}
+library(tidyverse)
+
+# Sample sales data
+sales <- tibble(
+  Store = c("Store A", "Store B", "Store C"),
+  Jan_Sales = c(100, 150, 120),
+  Feb_Sales = c(200, 180, 130),
+  Mar_Sales = c(150, 200, 140)
+)
+
+sales
+```
+
+a. Convert the dataset from wide (one column per month) to long (one row per month per store).
+
+```{r}
+
+```
+
+b. Clean month names by removing _Sales.
+
+```{r}
+
+```
+
+c. Convert the long dataset back to wide, with one column per month.
+
+```{r}
+
+```
+
+#### Q3. Mapping
+
+Let's visualize data by state.
+
+```{r}
+library(ggplot2)
+library(maps)
+library(dplyr)
+
+us_map <- map_data("state")
+
+state_data <- states |>
+  left_join(regions, by = "state") |>
+  mutate(state = tolower(state))
+
+```
+
+Use a join to combine the us_map with the state_data
+
+```{r}
+us_map_joined <- ...
+```
+
+Create a chloropleth map:
+
+```{r}
+ggplot(us_map_joined, aes(long, lat, group = group, fill = Income)) +
+  geom_polygon(color = "white") +
+  coord_fixed(1.3) +
+  theme_minimal() +
+  scale_fill_viridis_c() +
+  labs(title = "Average Income by State")
+```
+
+b.  Swap Income for Life Exp to visualize life expectancy instead. Try changing the color scale using scale_fill_gradient() or scale_fill_gradient2()
+
+```{r}
+
+```
+
+#### Q4. Quarto Dashboard Setup
+
+Create a new file ev-dashboard.qmd and add:
+
+```{markdown}
+
+---
+title: "EV Power Dashboard"
+format: dashboard
+---
+
+Add some sections:
+
+### Overview
+
+Your project introduction.
+
+### Map Visualization
+
+# Paste your ggplot map code here
+
+### Data Table
+
+# Show your joined dataset
+
+head(us_map_joined)
+
+Then render:
+
+quarto preview
+
+```

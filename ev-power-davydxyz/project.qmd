@@ -1,0 +1,96 @@
+---
+title: Clean Energy and Electric Vehicles
+title-prefix: Project 4
+format: stat133handout-typst
+---
+
+### **Main Research Question**
+
+*Electric vehicles reduce direct emissions, but does the electricity used to charge them actually come from clean sources?\
+*
+
+### **Datasets Provided**
+
+Go to the Ed post to accept the assignment for Lab4 and clone your repository.
+
+You will find the following CSV files in your GitHub repo:
+
++---------------------------------------------+------------------------------------------+-------------------+
+| **Dataset Name**                            | **File Name(s)**                         | **Years Covered** |
++=============================================+==========================================+===================+
+| U.S. Renewable Energy Use by State and Year | -   `renew_use_2021.csv`                 | 2021–2023         |
+|                                             |                                          |                   |
+|                                             | -   `renew_use_2022.csv`                 |                   |
+|                                             |                                          |                   |
+|                                             | -   `renew_use_2023.csv`                 |                   |
++---------------------------------------------+------------------------------------------+-------------------+
+| Average Energy Price by State and Year      | -   `av_energy_price_2021-2023.csv`      | 2021–2023         |
++---------------------------------------------+------------------------------------------+-------------------+
+| Total Energy Use by State and Year          | -   `total_energy_use_2021.csv`          | 2021–2023         |
+|                                             |                                          |                   |
+|                                             | -   `total_energy_use_2022.csv`          |                   |
+|                                             |                                          |                   |
+|                                             | -   `total_energy_use_2023.csv`          |                   |
++---------------------------------------------+------------------------------------------+-------------------+
+| EV Registrations by State                   | -   `ev-registrations-by_state_2023.csv` | 2023              |
++---------------------------------------------+------------------------------------------+-------------------+
+
+### **Part 1: Defining Research Questions**
+
+Brainstorm some questions about the datasets that you would like to answer through mapping that can help give some insight on our main research question about EV power. For one question, create a map to visualize your results.
+
+-   *Examples*: How has the share of renewable energy changed from 2021–2023 across states? What is the share of electricity that comes from clean sources by state? Do states with higher renewable usage have lower average electricity prices? Are EV registrations concentrated in states with cleaner energy mixes? Which regions show the fastest growth in renewable energy?
+
+-   You should be able to explore each question using the datasets provided. Try to come up with some creative questions that you are interested in learning the answers to!
+
+### **Part 2: Data Preparation & Cleaning**
+
+Load and clean your datasets to prepare for analysis.
+
+-   Use string manipulation to:
+
+    -   Standardize column names
+
+    -   Ensure state names are consistent across files
+
+### **Part 3: Joining / Pivoting Datasets for Analysis**
+
+Combine relevant datasets to explore your research questions. Combine yearly files into single tables as needed.
+
+For each research question, decide which datasets to merge. Document which method you chose and why. To further your analysis, create new variables, such as: percentage of renewable energy out of total energy, ratio of EV registrations to total energy use, etc.
+
+### **Part 4: Mapping and Dashboard Visualization**
+
+Create a map to support your analysis and visualize your findings:
+
+-   Can be interactive (leaflet) or static (sf)
+
+-   Use color scales effectively
+
+-   Can include time based data, showing changes from 2021-2023
+
+-   Ensure maps include titles, legends, and clear labeling
+
+### **Part 5: Final Deliverable**
+
+Your final submission on GitHub should be the following files:
+
+-   report.qmd - containing your code to clean and join the tables for your analysis and your report
+
+-   report.pdf - the rendered PDF file version of your report
+
+Your report PDF should include the following sections:
+
+1.  A title
+
+2.  Overview: Introduce your chosen sub-question
+
+3.  Data and Methods: Show key tables or data summaries (`head()` of joined datasets)
+
+4.  Map Visualization: Include the maps from your analysis
+
+5.  Analysis: Interpret your findings. What patterns do you notice? How does your map help answer the main research question?
+
+*Optional Challenge 1:* Create an interactive Quarto Dashboard with these sections titled `ev-dashboard.qmd`. Refer to the [quarto dashboard documentation](https://quarto.org/docs/dashboards/) for more information.
+
+*Optional Challenge 2:* Use quarto publish to publish your dashboard on the web through quarto pub. This is a great way to build your portfolio!
